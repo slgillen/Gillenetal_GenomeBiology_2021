@@ -34,7 +34,7 @@ for(i in 1:7){
 #normalise to the nanodrop concentrations for the RNA samples
 data_tables<-list(siControl_rep1,siCNOT1_rep1,siControl_rep2,siCNOT1_rep2,siControl_rep3,siCNOT1_rep3)
 
-nanodrop_concs<-read.table('~/CNOTdata/mRNAhalflives/nanodrop_RNA_concentrations.csv',sep=',',stringsAsFactors = FALSE,header=TRUE)
+nanodrop_concs<-read.table('nanodrop_RNA_concentrations.csv',sep=',',stringsAsFactors = FALSE,header=TRUE)
 nanodrop_concs<-nanodrop_concs[,c(2:7)]
 for(j in 1:length(data_tables)){
   dfx<-data_tables[[j]]
