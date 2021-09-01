@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#these scripts were adapted from https://pythonhosted.org/riboplot/ribocount.html
+##note: this script is adapted from the RiboCount part of the RiboPlot package (https://pythonhosted.org/riboplot/) 
 
 import sys
 import pysam
