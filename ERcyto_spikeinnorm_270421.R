@@ -1,34 +1,18 @@
-#TPMs and spike-in calculations
 
-
-spikeins<-readDNAStringSet('//john-doe/gw/Systems/Sarah/LabData/CNOTpaperRevisions/ERcyto_data/ERCC_spikein.fa')
+spikeins<-readDNAStringSet('ERCC_spikein.fa')
 seq_name = names(spikeins)
 sequence = paste(spikeins)
 spikeindf<-data.frame(seq_name, sequence,stringsAsFactors = FALSE)
 
-#sort first part of ENSG before . in gene ID merge
 
-#try CPM
-
-#try TPM
-
-#try where to add/remove the spike-in in the adjustments
-
-#check Chiara RNA concentrations between conditions
-
-
-
-###################################
-setwd("//john-doe/gw/Systems/Sarah/LabData/CNOTpaperRevisions/ERcyto_data/fcounts")
-
-sample_names<-c('A_Ctrl_Cyto','C_Ctrl_Cyto','E_Ctrl_Cyto','A_KD_Cyto','C_KD_Cyto','E_KD_Cyto','A_Ctrl_ER','C_Ctrl_ER','E_Ctrl_ER','A_KD_ER','C_KD_ER','E_KD_ER')
+sample_names<-c('Rep1_siControl_cyto','Rep2_siControl_cyto','Rep3_siControl_cyto','Rep1_siCNOT1_cyto','Rep2_siCNOT1_cyto','Rep3_siCNOT1_cyto','Rep1_siControl_ER','Rep2_siControl_ER','Rep3_siControl_ER','Rep1_siCNOT1_ER','Rep2_siCNOT1_ER','Rep3_siCNOT1_ER')
 
 samples<-list()
 for(i in 1:length(sample_names)){
-  xx<-read.table(paste0('fcounts_',sample_names[i],'_matrix.txt'),stringsAsFactors = FALSE,header=TRUE)
-  names(xx)<-c('ENSG',sample_names[i])
-  samples[[i]]<-xx
-  rm(xx)
+ xx<-read.table(paste0('fcounts_',sample_names[i],'_matrix.txt'),stringsAsFactors = FALSE,header=TRUE) #inputs are formatted outputs from featureCounts
+ names(xx)<-c('ENSG',sample_names[i])
+ samples[[i]]<-xx
+ rm(xx)
 }
 
 ERcyto_readcounts<-samples[[1]]
@@ -36,11 +20,9 @@ for(i in 2:length(samples)){
   ERcyto_readcounts<-merge(ERcyto_readcounts,samples[[i]],by='ENSG')
 }
 dim(ERcyto_readcounts)
-ERcyto_readcounts<-subset(ERcyto_readcounts,A_Ctrl_Cyto>0 & C_Ctrl_Cyto>0 & E_Ctrl_Cyto>0)
+ERcyto_readcounts<-subset(ERcyto_readcounts,Rep1_siControl_cyto>5 & Rep2_siControl_cyto>5 & Rep3_siControl_cyto>5) #pre-filtering to remove genes with no/very low reads
 nrow(ERcyto_readcounts)
 names(ERcyto_readcounts)
-apply(ERcyto_readcounts[,2:13],2,function(x) sum(x))
-
 
 
 #separate the spike-ins v2
@@ -84,27 +66,6 @@ ERcyto_readcounts_nano<-ERcyto_readcounts2
 for(i in 2:7){
   ERcyto_readcounts_nano[,i]<-ERcyto_readcounts_nano[,i]*ratios_nanodrop[i-1]
 }
-apply(ERcyto_readcounts_nano[,2:13],2,function(x) sum(x))
-
-
-
-
-#MDS plot of data - sanity check of the data spike-in ratio norm
-plotMDS(as.matrix(ERcyto_readcounts_SI[,c(2:13)])) #all samples
-plotMDS(as.matrix(ERcyto_readcounts_SI[,c(2:7)])) #cyto
-plotMDS(as.matrix(ERcyto_readcounts_SI[,c(8:13)])) #ER
-plotMDS(as.matrix(ERcyto_readcounts_SI[,c(2,3,4,8,9,10)])) #control
-plotMDS(as.matrix(ERcyto_readcounts_SI[,c(5,6,7,11,12,13)])) #KD
-
-
-#MDS plot of data - sanity check of the data nanodrop ratio norm
-plotMDS(as.matrix(ERcyto_readcounts_nano[,c(2:13)])) #all samples
-plotMDS(as.matrix(ERcyto_readcounts_nano[,c(2:7)])) #cyto
-plotMDS(as.matrix(ERcyto_readcounts_nano[,c(8:13)])) #ER
-plotMDS(as.matrix(ERcyto_readcounts_nano[,c(2,3,4,8,9,10)])) #control
-plotMDS(as.matrix(ERcyto_readcounts_nano[,c(5,6,7,11,12,13)])) #KD
-
-
 
 ###############################################################################################
 ################################### based on spike-in #########################################
@@ -265,132 +226,6 @@ nrow(plotdata)
 plotdata$cluster_k2<-factor(plotdata$cluster_k2,levels=c('2','1'))
 plotdata<-subset(plotdata,startsWith(plotdata$Gene_ID,'MT-')==FALSE)
 nrow(plotdata)
-
-
-##
-f1<-ggplot(kmeans_merge,aes(x=Ctrl_cyto_average,y=Ctrl_ER_average,col=cluster_k2))+geom_point(size=0.3)+theme_classic()+
-  scale_x_log10()+scale_y_log10()+xlab('cyto CPM')+ylab('ER CPM')+scale_colour_manual(values=c('grey68','royalblue3'))+
-  theme(legend.text=element_text(size=12),axis.text = element_text(size = 12), axis.title = element_text(size = 12),
-        plot.title=element_text(size=16),legend.title=element_blank())
-ggsave(plot=f1,filename='control_ERcyto.png',height=4,width=4.5)
-
-f1<-ggplot(kmeans_merge,aes(x=Ctrl_ER_average,y=KD_ER_average,col=cluster_k2))+geom_point(size=0.75)+theme_classic()+
-  scale_x_log10()+scale_y_log10()+xlab('Control ER CPM')+ylab('KD ER CPM')+scale_colour_manual(values=c('grey68','royalblue3'))+
-  theme(legend.text=element_text(size=12),axis.text = element_text(size = 12), axis.title = element_text(size = 12),
-        plot.title=element_text(size=16),legend.title=element_blank())
-ggsave(plot=f1,filename='ER_KDvCtrl.png',height=4,width=4.5)
-
-f1<-ggplot(kmeans_merge,aes(x=Ctrl_cyto_average,y=KD_cyto_average,col=cluster_k2))+geom_point(size=0.75)+theme_classic()+
-  scale_x_log10()+scale_y_log10()+xlab('Control cyto CPM')+ylab('KD cyto CPM')+scale_colour_manual(values=c('grey68','royalblue3'))+
-  theme(legend.text=element_text(size=12),axis.text = element_text(size = 12), axis.title = element_text(size = 12),
-        plot.title=element_text(size=16),legend.title=element_blank())
-ggsave(plot=f1,filename='cyto_KDvCtrl.png',height=4,width=4.5)
-
-f1<-ggplot(kmeans_merge,aes(x=KD_cyto_average,y=KD_ER_average,col=cluster_k2))+geom_point(size=0.75)+theme_classic()+
-  scale_x_log10()+scale_y_log10()+xlab('Control cyto CPM')+ylab('KD cyto CPM')+scale_colour_manual(values=c('grey68','royalblue3'))+
-  theme(legend.text=element_text(size=12),axis.text = element_text(size = 12), axis.title = element_text(size = 12),
-        plot.title=element_text(size=16),legend.title=element_blank())
-ggsave(plot=f1,filename='KD_ERcyto.png',height=4,width=4.5)
-
-##
-colourset<-c('grey68','royalblue3')
-f1<-ggplot(plotdata, aes(y=cyto_KDtoCtrl_average,x=cluster_k2,fill=cluster_k2))+geom_violin(draw_quantiles=c(0.25,0.5,0.75))+scale_fill_manual(values=colourset)+
-  theme_classic()+theme(legend.text=element_text(size=12),axis.text.x = element_blank(),axis.ticks.x=element_blank(), axis.title.x=element_blank(),
-                        axis.text.y = element_text(size = 12), axis.title = element_text(size = 12),
-                        plot.title=element_text(size=16),legend.title=element_blank())+coord_trans(limy=c(-4,4))
-ggsave(plot=f1,filename='cyto_KDtoCtrl_average.png',height=4,width=3)
-
-colourset<-c('grey68','royalblue3')
-f1<-ggplot(plotdata, aes(y=ER_KDtoCtrl_average,x=cluster_k2,fill=cluster_k2))+geom_violin(draw_quantiles=c(0.25,0.5,0.75))+scale_fill_manual(values=colourset)+
-  theme_classic()+theme(legend.text=element_text(size=12),axis.text.x = element_blank(),axis.ticks.x=element_blank(), axis.title.x=element_blank(),
-                        axis.text.y = element_text(size = 12), axis.title = element_text(size = 12),
-                        plot.title=element_text(size=16),legend.title=element_blank())+coord_trans(limy=c(-4,4))
-ggsave(plot=f1,filename='ER_KDtoCtrl_average.png',height=4,width=3)
-
-colourset<-c('grey68','royalblue3')
-f1<-ggplot(plotdata, aes(y=Ctrl_ERcyto_average,x=cluster_k2,fill=cluster_k2))+geom_violin(draw_quantiles=c(0.25,0.5,0.75))+scale_fill_manual(values=colourset)+
-  theme_classic()+theme(legend.text=element_text(size=12),axis.text.x = element_blank(),axis.ticks.x=element_blank(), axis.title.x=element_blank(),
-                        axis.text.y = element_text(size = 12), axis.title = element_text(size = 12),
-                        plot.title=element_text(size=16),legend.title=element_blank())+coord_trans(limy=c(-4,4))
-ggsave(plot=f1,filename='Ctrl_ERcyto_average.png',height=4,width=3)
-
-colourset<-c('grey68','royalblue3')
-f1<-ggplot(plotdata, aes(y=KD_ERcyto_average,x=cluster_k2,fill=cluster_k2))+geom_violin(draw_quantiles=c(0.25,0.5,0.75))+scale_fill_manual(values=colourset)+
-  theme_classic()+theme(legend.text=element_text(size=12),axis.text.x = element_blank(),axis.ticks.x=element_blank(), axis.title.x=element_blank(),
-                        axis.text.y = element_text(size = 12), axis.title = element_text(size = 12),
-                        plot.title=element_text(size=16),legend.title=element_blank())+coord_trans(limy=c(-4,4))
-ggsave(plot=f1,filename='KD_ERcyto_average.png',height=4,width=3)
-
-
-######## now do boxplots for gene groups ###########
-
-
-#Reid 2011 data
-Reid2011<-read.table('//john-doe/gw/Systems/Sarah/CNOTpaper/SRPinvestigations/Reid_2011_ER_Cyto.csv',sep=',',stringsAsFactors = FALSE,header=TRUE)
-unique(Reid2011$Type)
-
-plotdata<-merge(plotdata,Reid2011[,c(2,16)],by.x='Gene_ID',by.y='Gene')
-plotdata$Type<-factor(plotdata$Type,levels=c("","Cytosolic","ER-targeted"))
-plotdata<-plotdata[order(plotdata$Type),]
-
-colourset<-c('grey68','darkorange','royalblue3')
-ggplot(plotdata, aes(y=Ctrl_ERcyto_average,x=Type,fill=Type))+geom_boxplot(alpha=0.75,outlier.size=0.75)+scale_fill_manual(values=colourset)+
-  theme_classic()+theme(legend.text=element_text(size=12),axis.text.x = element_blank(),axis.ticks.x=element_blank(), axis.title.x=element_blank(),
-                        axis.text.y = element_text(size = 12), axis.title = element_text(size = 12),
-                        plot.title=element_text(size=16),legend.title=element_blank())+coord_trans(limy=c(-4,4))
-
-colourset<-c('grey68','darkorange','royalblue3')
-ggplot(plotdata, aes(y=KD_ERcyto_average,x=Type,fill=Type))+geom_boxplot(alpha=0.75,outlier.size=0.75)+scale_fill_manual(values=colourset)+
-  theme_classic()+theme(legend.text=element_text(size=12),axis.text.x = element_blank(),axis.ticks.x=element_blank(), axis.title.x=element_blank(),
-                        axis.text.y = element_text(size = 12), axis.title = element_text(size = 12),
-                        plot.title=element_text(size=16),legend.title=element_blank())+coord_trans(limy=c(-4,4))
-
-
-
-
-
-
-############### try % in each fraction for group assignment #############
-
-plotdata$fractionofregion<-plotdata$Ctrl_ER_average/(plotdata$Ctrl_ER_average+plotdata$Ctrl_cyto_average)
-plotdata$fractiongroup<-rep('other',nrow(plotdata))
-
-for(i in 1:nrow(plotdata)){
-  if(plotdata[i,'fractionofregion']>0.75){
-    plotdata[i,'fractiongroup']<-'ER-targeted'
-  }
-  if(plotdata[i,'fractionofregion']<0.25){
-    plotdata[i,'fractiongroup']<-'cyto localised'
-  }
-}
-
-for(g in unique(plotdata$fractiongroup)){
-  print(g)
-  print(nrow(subset(plotdata,fractiongroup==g)))
-}
-
-SILAC<-merge(M,RPF27to31,by.x='gene_name',by.y='Gene_ID')
-dim(SILAC)
-SILAC<-merge(SILAC,plotdata[,c(3,38,40)],by.x='gene_name',by.y='Gene_ID')
-nrow(SILAC)
-
-f1<-ggplot(SILAC,aes(y=as.numeric(SILAC$mean_FR),x=cluster_k2,fill=cluster_k2))+geom_boxplot(outlier.size=0.5)+theme_classic()+scale_fill_manual(values=c('grey68','royalblue3'))
-f1<-f1+ylab('average protein production')+coord_trans(limy=c(-1,1))
-f1<-f1+theme(legend.text=element_text(size=12),axis.text.x = element_blank(),axis.ticks.x=element_blank(),axis.title.x=element_blank(),
-             axis.text.y = element_text(size = 14), axis.title = element_text(size = 16),
-             plot.title=element_text(size=16),legend.title=element_blank())
-f1
-ggsave(plot=f1,filename='SILAC_newERcytogroups.png',width=3,height=3.5)
-
-
-f1<-ggplot(SILAC,aes(y=as.numeric(SILAC$mean_FR),x=fractiongroup,fill=fractiongroup))+geom_boxplot(outlier.size=0.5)+theme_classic()+scale_fill_manual(values=c('darkorange','royalblue3','grey68'))
-f1<-f1+ylab('average protein production')+coord_trans(limy=c(-1,1))
-f1<-f1+theme(legend.text=element_text(size=12),axis.text.x = element_blank(),axis.ticks.x=element_blank(),axis.title.x=element_blank(),
-             axis.text.y = element_text(size = 14), axis.title = element_text(size = 16),
-             plot.title=element_text(size=16),legend.title=element_blank())
-f1
-ggsave(plot=f1,filename='SILAC_newERcytogroup_v2.png',width=4,height=3.5)
-
 
 
 
