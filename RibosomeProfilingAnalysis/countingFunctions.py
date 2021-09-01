@@ -1,4 +1,5 @@
 #!/usr/bin/python
+#note: this script is adapted from the RiboCount part of the RiboPlot package (https://pythonhosted.org/riboplot/) 
 import collections
 
 def lengths_offsets(value):
