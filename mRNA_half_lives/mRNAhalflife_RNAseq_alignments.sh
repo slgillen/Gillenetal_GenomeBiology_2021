@@ -3,6 +3,7 @@ inputdir=''
 bcldatadir=''
 datadir=''
 
+#countsfiles from featureCounts as inputs for siControl ('con') and siCNOT1 ('not') treated samples
 inputfiles='con_0hr, con_05hr, con_1hr, con_2hr, con_4hr, con_8hr, con_16hr, not_0hr, not_05hr, not_1hr, not_2hr, not_4hr, not_8hr, not_16hr' 
 
 #separate samples from sequencing lane
